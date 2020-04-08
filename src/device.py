@@ -27,6 +27,10 @@ class Device(ABC):
         pass
 
     @abstractclassmethod
+    def receive_pckt(self,pckt):
+        pass
+
+    @abstractclassmethod
     def step(self):
         pass
 
@@ -47,6 +51,9 @@ class DummyDevice(Device):
 
     def __str__(self):
         return "Device IP: {}".format(self.ip)
+    
+    def receive_pckt(self,pckt):
+        pass
     
     def step(self):
         pass

@@ -2,6 +2,7 @@ import context
 from src.device import Device
 from src.router import Router
 from src.host import Host
+from src.packet import Packet, Packet_Type
 
 class BFS():
     def __init__(self,start:Router,host:Host):
@@ -46,10 +47,32 @@ class Network():
             h = self.hosts[ip]
             bfs_obj = BFS(h.get_connected_router(),h)
             bfs_obj.bfs()
-        
-        for ip in self.routers:
-            print(self.routers[ip])
     
     def step(self):
         for ip in self.devices:
             self.devices[ip].step()
+
+if __name__ == "__main__":
+    net = Network()
+    net.add_host("1")
+    net.add_host("2")
+
+    net.add_router("3")
+    net.add_router("4")
+
+    net.link("1","3")
+    net.link("2","4")
+    net.link("3","4")
+
+    net.generate_forwarding_table_entries()
+
+    pckt = Packet(123,net.hosts["1"],net.hosts["2"],Packet_Type.DATA)
+
+    net.hosts["1"].send_pckt(pckt)
+
+    net.step()
+    net.step()
+    net.step()
+    net.step()
+    net.step()
+    net.step()

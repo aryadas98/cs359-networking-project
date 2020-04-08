@@ -1,5 +1,6 @@
 import context
 from src.device import Device
+from src.packet import Packet
 
 class Host(Device):
     def __init__(self, ip:str):
@@ -14,6 +15,13 @@ class Host(Device):
     
     def device_type(self):
         return "Host"
+
+    def send_pckt(self,pckt:Packet):
+        print("Host {} sent packet {} to host {}.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_to().get_ip()))
+        self.connected_router.receive_pckt(pckt)
+
+    def receive_pckt(self,pckt:Packet):
+        print("Host {} received packet {} from host {}.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_from().get_ip()))
     
     def __str__(self):
         msg = "Host IP: {}\r\n".format(self.ip)
