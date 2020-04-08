@@ -17,6 +17,10 @@ class Device(ABC):
 
     def __hash__(self):
         return hash(self.ip)
+    
+    @abstractclassmethod
+    def device_type(self):
+        pass
 
     @abstractclassmethod
     def link(self,other):
@@ -35,6 +39,9 @@ class DummyDevice(Device):
     def __init__(self, ip:str):
         super().__init__(ip)
     
+    def device_type(self):
+        return "Dummy"
+
     def link(self,other):
         pass
 

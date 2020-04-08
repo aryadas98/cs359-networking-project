@@ -10,5 +10,7 @@ def test_host():
 
     assert(h1 == "192.168.0.1")
     assert(h2 == "192.168.0.2")
+    assert(h1.device_type() == "Host")
+    assert(h2.device_type() == "Host")
     assert(h1.connected_router == h2)
     assert(h2.connected_router == h1)

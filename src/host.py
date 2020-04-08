@@ -9,6 +9,12 @@ class Host(Device):
     def link(self,other:Device):
         self.connected_router = other
     
+    def get_connected_router(self):
+        return self.connected_router
+    
+    def device_type(self):
+        return "Host"
+    
     def __str__(self):
         msg = "Host IP: {}\r\n".format(self.ip)
         msg = msg + "Connected to {}\r\n".format(self.connected_router.get_ip())
