@@ -1,5 +1,11 @@
 import context
 from abc import ABC,abstractclassmethod
+from enum import Enum, auto
+
+class Device_Type(Enum):
+    DUMMY = auto()
+    HOST = auto()
+    ROUTER = auto()
 
 class Device(ABC):
     
@@ -44,7 +50,7 @@ class DummyDevice(Device):
         super().__init__(ip)
     
     def device_type(self):
-        return "Dummy"
+        return Device_Type.DUMMY
 
     def link(self,other):
         pass

@@ -67,12 +67,10 @@ if __name__ == "__main__":
     net.generate_forwarding_table_entries()
 
     pckt = Packet(123,net.hosts["1"],net.hosts["2"],Packet_Type.DATA)
+    pckt2 = Packet(456,net.hosts["2"],net.hosts["1"],Packet_Type.DATA)
 
     net.hosts["1"].send_pckt(pckt)
+    net.hosts["2"].send_pckt(pckt2)
 
-    net.step()
-    net.step()
-    net.step()
-    net.step()
-    net.step()
-    net.step()
+    for i in range(50):
+        net.step()

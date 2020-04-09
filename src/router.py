@@ -1,5 +1,5 @@
 import context
-from src.device import Device
+from src.device import Device, Device_Type
 from src.packet import Packet
 
 class Router(Device):
@@ -20,9 +20,9 @@ class Router(Device):
     def link(self,dev:Device):
         self.connected_devices.add(dev)
         
-        if dev.device_type() == "Router":
+        if dev.device_type() == Device_Type.ROUTER:
             self.connected_routers.add(dev)
-        elif dev.device_type() == "Host":
+        elif dev.device_type() == Device_Type.HOST:
             self.connected_hosts.add(dev)
 
         self.add_forwarding_table_entry(dev,dev)
@@ -40,7 +40,7 @@ class Router(Device):
         self.forwarding_table[dest] = forward_to
     
     def device_type(self):
-        return "Router"
+        return Device_Type.ROUTER
 
     def receive_pckt(self,pckt:Packet):
         if len(self.incoming_buffer) < self.buffer_cap:
