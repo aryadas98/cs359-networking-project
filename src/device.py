@@ -11,6 +11,7 @@ class Device(ABC):
     
     def __init__(self, ip:str):
         self.ip = ip
+        self.clock = 0
     
     def get_ip(self):
         return self.ip
@@ -36,9 +37,8 @@ class Device(ABC):
     def receive_pckt(self,pckt):
         pass
 
-    @abstractclassmethod
     def step(self):
-        pass
+        self.clock = self.clock + 1
 
     @abstractclassmethod
     def __str__(self):
@@ -62,4 +62,5 @@ class DummyDevice(Device):
         pass
     
     def step(self):
+        super().step()
         pass

@@ -48,6 +48,8 @@ class Router(Device):
             print("Router {} received packet {}.".format(self.get_ip(),pckt.get_seg_no()))
 
     def step(self):
+        super().step()
+
         for p in self.outgoing_buffer:
             t = p.get_to()
             f = self.forwarding_table[t]

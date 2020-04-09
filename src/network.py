@@ -29,6 +29,7 @@ class Network():
         self.routers = dict()
         self.hosts = dict()
         self.devices = dict()
+        self.clock = 0
     
     def add_host(self,ip:str):
         self.hosts[ip] = Host(ip)
@@ -49,6 +50,9 @@ class Network():
             bfs_obj.bfs()
     
     def step(self):
+        self.clock = self.clock + 1
+        print("Tick",self.clock)
+
         for ip in self.devices:
             self.devices[ip].step()
 
