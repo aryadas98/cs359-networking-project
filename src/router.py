@@ -45,7 +45,7 @@ class Router(Device):
     def receive_pckt(self,pckt:Packet):
         if len(self.incoming_buffer) < self.buffer_cap:
             self.incoming_buffer.append(pckt)
-            print("Router {} received packet {}.".format(self.get_ip(),pckt.get_seg_no()))
+            #print("Router {} received packet {}.".format(self.get_ip(),pckt.get_seg_no()))
 
     def step(self):
         super().step()

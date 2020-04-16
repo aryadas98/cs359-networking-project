@@ -31,12 +31,12 @@ class Network():
         self.devices = dict()
         self.clock = 0
     
-    def add_host(self,ip:str):
-        self.hosts[ip] = Host(ip)
+    def add_host(self,ip:str,buffer_cap=5):
+        self.hosts[ip] = Host(ip,buffer_cap)
         self.devices[ip] = self.hosts[ip]
     
-    def add_router(self,ip:str):
-        self.routers[ip] = Router(ip)
+    def add_router(self,ip:str,buffer_cap=5):
+        self.routers[ip] = Router(ip,buffer_cap)
         self.devices[ip] = self.routers[ip]
     
     def link(self,ip1:str,ip2:str):
@@ -55,26 +55,3 @@ class Network():
 
         for ip in self.devices:
             self.devices[ip].step()
-
-if __name__ == "__main__":
-    net = Network()
-    net.add_host("1")
-    net.add_host("2")
-
-    net.add_router("3")
-    net.add_router("4")
-
-    net.link("1","3")
-    net.link("2","4")
-    net.link("3","4")
-
-    net.generate_forwarding_table_entries()
-
-    pckt = Packet(123,net.hosts["1"],net.hosts["2"],Packet_Type.DATA)
-    pckt2 = Packet(456,net.hosts["2"],net.hosts["1"],Packet_Type.DATA)
-
-    net.hosts["1"].send_pckt(pckt)
-    net.hosts["2"].send_pckt(pckt2)
-
-    for i in range(50):
-        net.step()

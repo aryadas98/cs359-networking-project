@@ -8,7 +8,8 @@ class TCP():
         self.packets_in_flight = list()
         self.pckts_to_resend = list()
         self.window_size = 1
-        self.timeout = 9
+        self.sstresh = 8
+        self.timeout = 10
 
 class Host(Device):
     def __init__(self, ip:str, buffer_cap=5):
@@ -18,6 +19,7 @@ class Host(Device):
         self.incoming_buffer = list()
         self.buffer_cap = buffer_cap
         self.tcp = TCP()
+        self.def_seg_no = 1
     
     def link(self,other:Device):
         self.connected_router = other
@@ -30,6 +32,11 @@ class Host(Device):
 
     def send_pckt(self,pckt:Packet):
         self.tcp.packets_to_send.append(pckt)
+    
+    def send_random_packet(self,to_device:Device):
+        pckt = Packet(self.def_seg_no,self,to_device,Packet_Type.DATA)
+        self.send_pckt(pckt)
+        self.def_seg_no = self.def_seg_no + 1
 
     def receive_pckt(self,pckt:Packet):
         if len(self.incoming_buffer) < self.buffer_cap:
@@ -64,11 +71,12 @@ class Host(Device):
                         break
                 
                 if index >= 0:
+                    self.tcp.timeout = self.clock-self.tcp.packets_in_flight[i][1]     # set tcp timeout adaptively
                     self.tcp.packets_in_flight.pop(index)
                 
                 index = -1
                 for i in range(len(self.tcp.packets_to_send)):
-                    pckt2 = self.tcp.packets_to_send[i][0]
+                    pckt2 = self.tcp.packets_to_send[i]
                     if pckt2.get_seg_no() == seg_no:
                         index = i
                         break
@@ -89,26 +97,43 @@ class Host(Device):
         for i in self.tcp.pckts_to_resend:
             pckt = self.tcp.packets_in_flight[i][0]
             self.tcp.packets_to_send.insert(0,pckt)
-            del self.tcp.packets_in_flight[i]
             print("Host {} resending packet {} due to timeout.".format(self.get_ip(),pckt.get_seg_no()))
         
+        for i in sorted(self.tcp.pckts_to_resend,reverse=True):
+            del self.tcp.packets_in_flight[i]
+
+        # reset window size and ssthresh in case of timeout
+        if len(self.tcp.pckts_to_resend) > 0:
+            self.tcp.sstresh = self.tcp.window_size//2
+            self.tcp.window_size = 1
+
         self.tcp.pckts_to_resend.clear()
 
         # send packets
-        for i in range(self.tcp.window_size):
-            if len(self.tcp.packets_to_send) == 0:
-                break
+        # send packets only if there are no packets in flight
+        if len(self.tcp.packets_in_flight) == 0:
 
-            pckt = self.tcp.packets_to_send.pop(0)
-            self.outgoing_buffer.append(pckt)
-            self.tcp.packets_in_flight.append((pckt,self.clock))
+            # increase window size if no packet loss
+            if len(self.tcp.pckts_to_resend) == 0:
+                if self.tcp.window_size < self.tcp.sstresh//2:
+                    self.tcp.window_size = self.tcp.window_size * 2  # slow start
+                else:
+                    self.tcp.window_size = self.tcp.window_size + 1  # linear increase
 
-        for pckt in self.outgoing_buffer:
-            if pckt.get_pckt_type() == Packet_Type.DATA:
-                print("Host {} sent packet {} to host {}.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_to().get_ip()))
-            self.connected_router.receive_pckt(pckt)
-        
-        self.outgoing_buffer.clear()
+            for i in range(self.tcp.window_size):
+                if len(self.tcp.packets_to_send) == 0:
+                    break
+
+                pckt = self.tcp.packets_to_send.pop(0)
+                self.outgoing_buffer.append(pckt)
+                self.tcp.packets_in_flight.append((pckt,self.clock))
+
+            for pckt in self.outgoing_buffer:
+                if pckt.get_pckt_type() == Packet_Type.DATA:
+                    print("Host {} sent packet {} to host {}.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_to().get_ip()))
+                self.connected_router.receive_pckt(pckt)
+            
+            self.outgoing_buffer.clear()
 
 
 if __name__ == "__main__":
