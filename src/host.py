@@ -8,7 +8,7 @@ class TCP():
         self.packets_in_flight = list()
         self.pckts_to_resend = list()
         self.window_size = 1
-        self.sstresh = 18
+        self.ssthresh = 18
         self.timeout = 10
 
 class Host(Device):
@@ -51,17 +51,7 @@ class Host(Device):
     def step(self):
         super().step()
 
-        # increase window size
-        for pckt in self.incoming_buffer:
-            if pckt.get_pckt_type() == Packet_Type.ACK:
-                if self.tcp.window_size < self.tcp.sstresh//4:
-                    self.tcp.window_size = self.tcp.window_size * 2  # slow start
-                elif self.tcp.window_size < self.tcp.sstresh//2:
-                    self.tcp.window_size = self.tcp.sstresh//2
-                else:
-                    self.tcp.window_size = self.tcp.window_size + 1  # linear increase
-                break
-
+        received_ack = False
 
         # handle incoming packets
         for pckt in self.incoming_buffer:
@@ -69,7 +59,7 @@ class Host(Device):
                 # send ack packet
                 ack_pack = Packet(pckt.get_seg_no(),pckt.get_to(),pckt.get_from(),Packet_Type.ACK)
                 self.outgoing_buffer.append(ack_pack)
-                #print("Host {} received packet {} from host {} and sent ACK.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_from().get_ip()))
+                # print("Host {} received packet {} from host {} and sent ACK.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_from().get_ip()))
                 pass
             
             elif pckt.get_pckt_type() == Packet_Type.ACK:
@@ -97,7 +87,8 @@ class Host(Device):
                 if index >= 0:
                     self.tcp.packets_to_send.pop(index)
                 
-                #print("Host {} received ACK from host {}.".format(self.get_ip(), pckt.get_from().get_ip()))
+                # print("Host {} received ACK from host {}.".format(self.get_ip(), pckt.get_from().get_ip()))
+                received_ack = True
                 pass
 
         self.incoming_buffer.clear()
@@ -111,7 +102,7 @@ class Host(Device):
         for i in self.tcp.pckts_to_resend:
             pckt = self.tcp.packets_in_flight[i][0]
             self.tcp.packets_to_send.insert(0,pckt)
-            #print("Host {} resending packet {} due to timeout.".format(self.get_ip(),pckt.get_seg_no()))
+            # print("Host {} resending packet {} due to timeout.".format(self.get_ip(),pckt.get_seg_no()))
             pass
         
         for i in sorted(self.tcp.pckts_to_resend,reverse=True):
@@ -119,10 +110,20 @@ class Host(Device):
 
         # reset window size and ssthresh in case of timeout
         if len(self.tcp.pckts_to_resend) > 0:
-            self.tcp.sstresh = self.tcp.window_size
-            self.tcp.window_size = self.tcp.sstresh//2
+            self.tcp.ssthresh = self.tcp.window_size
+            self.tcp.window_size = self.tcp.ssthresh//2
+        elif received_ack:
+            if self.tcp.window_size < self.tcp.ssthresh//4:
+                self.tcp.window_size = self.tcp.window_size * 2  # slow start
+            elif self.tcp.window_size < self.tcp.ssthresh//2:
+                self.tcp.window_size = self.tcp.ssthresh//2
+            else:
+                self.tcp.window_size = self.tcp.window_size + 1  # linear increase
 
         self.tcp.pckts_to_resend.clear()
+
+        if self.tcp.window_size < 1:
+            self.tcp.window_size = 1    # minimum window size
 
         # send packets
         # send packets only if there are no packets in flight
@@ -138,7 +139,7 @@ class Host(Device):
 
             for pckt in self.outgoing_buffer:
                 if pckt.get_pckt_type() == Packet_Type.DATA:
-                    #print("Host {} sent packet {} to host {}.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_to().get_ip()))
+                    # print("Host {} sent packet {} to host {}.".format(self.get_ip(), pckt.get_seg_no(), pckt.get_to().get_ip()))
                     pass
                 self.connected_router.receive_pckt(pckt)
             

@@ -51,7 +51,10 @@ class Network():
     
     def step(self):
         self.clock = self.clock + 1
-        #print("Tick",self.clock)
+        # print("Tick",self.clock)
 
-        for ip in self.devices:
+        for ip in self.routers:
+            self.devices[ip].step()
+
+        for ip in self.hosts:
             self.devices[ip].step()

@@ -1,6 +1,7 @@
 import context
 from src.device import Device, Device_Type
 from src.packet import Packet
+import random
 
 class Router(Device):
 
@@ -15,7 +16,6 @@ class Router(Device):
         
         self.outgoing_buffer = list()
         self.incoming_buffer = list()
-        self.common_buffer = list()
     
     def link(self,dev:Device):
         self.connected_devices.add(dev)
@@ -43,12 +43,22 @@ class Router(Device):
         return Device_Type.ROUTER
 
     def receive_pckt(self,pckt:Packet):
-        if len(self.incoming_buffer) < self.buffer_cap:
-            self.incoming_buffer.append(pckt)
-            #print("Router {} received packet {}.".format(self.get_ip(),pckt.get_seg_no()))
+        self.incoming_buffer.append(pckt)
+        #print("Router {} received packet {}.".format(self.get_ip(),pckt.get_seg_no()))
 
     def step(self):
         super().step()
+
+        # randomly keep max capacity packets
+        random.shuffle(self.incoming_buffer)
+        random.shuffle(self.outgoing_buffer)
+
+        while(len(self.incoming_buffer) + len(self.outgoing_buffer)) > self.buffer_cap:
+            if len(self.incoming_buffer) > 0:
+                self.incoming_buffer.pop(0)
+
+            if len(self.outgoing_buffer) > 0:
+                self.outgoing_buffer.pop(0)
 
         for p in self.outgoing_buffer:
             t = p.get_to()
@@ -57,12 +67,8 @@ class Router(Device):
         
         self.outgoing_buffer.clear()
 
-        for p in self.common_buffer:
-            self.outgoing_buffer.append(p)
-        self.common_buffer.clear()
-
         for p in self.incoming_buffer:
-            self.common_buffer.append(p)
+            self.outgoing_buffer.append(p)
         self.incoming_buffer.clear()
 
     def __str__(self):
