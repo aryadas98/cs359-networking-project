@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 .vscode
+
+.~lock.tcp_data.csv#

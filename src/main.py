@@ -33,5 +33,6 @@ for i in range(515):
     net.step()
     print(
        net.hosts["1"].tcp.window_size,
-       net.hosts["3"].tcp.window_size, 
-       net.hosts["6"].tcp.window_size)
+       net.hosts["1"].tcp.ssthresh,
+       int(net.hosts["1"].tcp.ack_recv_flag),
+       int(net.hosts["1"].tcp.ack_timeout_flag))

@@ -11,6 +11,9 @@ class TCP():
         self.ssthresh = 18
         self.timeout = 10
 
+        self.ack_recv_flag = False
+        self.ack_timeout_flag = False
+
 class Host(Device):
     def __init__(self, ip:str, buffer_cap=5):
         super().__init__(ip)
@@ -51,7 +54,8 @@ class Host(Device):
     def step(self):
         super().step()
 
-        received_ack = False
+        self.tcp.ack_recv_flag = False
+        self.tcp.ack_timeout_flag = False
 
         # handle incoming packets
         for pckt in self.incoming_buffer:
@@ -88,7 +92,7 @@ class Host(Device):
                     self.tcp.packets_to_send.pop(index)
                 
                 # print("Host {} received ACK from host {}.".format(self.get_ip(), pckt.get_from().get_ip()))
-                received_ack = True
+                self.tcp.ack_recv_flag = True
                 pass
 
         self.incoming_buffer.clear()
@@ -110,9 +114,12 @@ class Host(Device):
 
         # reset window size and ssthresh in case of timeout
         if len(self.tcp.pckts_to_resend) > 0:
+            self.tcp.ack_timeout_flag = True
+
+        if self.tcp.ack_timeout_flag:
             self.tcp.ssthresh = self.tcp.window_size
             self.tcp.window_size = self.tcp.ssthresh//2
-        elif received_ack:
+        elif self.tcp.ack_recv_flag:
             if self.tcp.window_size < self.tcp.ssthresh//4:
                 self.tcp.window_size = self.tcp.window_size * 2  # slow start
             elif self.tcp.window_size < self.tcp.ssthresh//2:
@@ -124,6 +131,9 @@ class Host(Device):
 
         if self.tcp.window_size < 1:
             self.tcp.window_size = 1    # minimum window size
+        
+        if self.tcp.ssthresh < 2:
+            self.tcp.ssthresh = 2   # minimum ssthresh value
 
         # send packets
         # send packets only if there are no packets in flight
