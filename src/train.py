@@ -1,23 +1,21 @@
 import numpy as np
 import os.path
 import pickle
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 
 file_path = os.path.join(os.path.dirname(__file__),os.pardir,'data/tcp_data.csv')
 
-X = np.loadtxt(file_path,delimiter=',',skiprows=1,usecols=(0,2,3))
-thres_vals = np.loadtxt(file_path,delimiter=',',skiprows=1,usecols=(1))
-Y = np.loadtxt(file_path,delimiter=',',skiprows=1,usecols=(4,5))
+X = np.loadtxt(file_path,delimiter=',',skiprows=1,usecols=(0,1,2))
+Y = np.loadtxt(file_path,delimiter=',',skiprows=1,usecols=(3))
 
-# normalize input
-X[:,0] = X[:,0]/thres_vals
-Y[:,0] = Y[:,0]/thres_vals
-Y[:,1] = Y[:,1]/thres_vals
+poly_features = PolynomialFeatures(degree=2,interaction_only=True)
+X_poly = poly_features.fit_transform(X)
 
-dt = DecisionTreeRegressor()
-dt.fit(X,Y)
+lr = LinearRegression()
+lr.fit(X_poly,Y)
 
-Y_pred = dt.predict(X)
+Y_pred = lr.predict(X_poly)
 train_err = np.mean(np.abs(Y-Y_pred))
 print("Training completed.")
 print("Loss:",train_err)
@@ -35,17 +33,9 @@ print("Testing on data:")
 print(testX)
 print()
 
-test_thres_vals = np.array([100,100,100,100,100])
-testX[:,0] = testX[:,0]/test_thres_vals
+testX_poly = poly_features.fit_transform(testX)
 
-print("ssthreshs:")
-print(test_thres_vals)
-print()
-
-test_pred = dt.predict(testX)
-
-test_pred[:,0] = test_pred[:,0]*test_thres_vals
-test_pred[:,1] = test_pred[:,1]*test_thres_vals
+test_pred = lr.predict(testX_poly)
 
 print("Predictions:")
 print(test_pred)
@@ -54,4 +44,4 @@ print()
 model_save_path = os.path.join(os.path.dirname(__file__),os.pardir,'model/model.pickle')
 
 print("Saving model as model/model.pickle")
-pickle.dump(dt, open(model_save_path, 'wb'))
+pickle.dump(lr, open(model_save_path, 'wb'))

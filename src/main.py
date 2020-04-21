@@ -1,7 +1,10 @@
 import context
-from src.network import Network
+from src.networkml import NetworkML
 
-net = Network()
+import matplotlib.pyplot as plt
+import numpy as np
+
+net = NetworkML()
 net.add_host("1",16)
 net.add_host("2",16)
 net.add_host("3",16)
@@ -24,15 +27,39 @@ for i in range(500):
     net.hosts["1"].send_random_packet(net.hosts["2"])
 
 for i in range(500):
-    net.hosts["3"].send_random_packet(net.hosts["4"])
+   net.hosts["3"].send_random_packet(net.hosts["4"])
 
 for i in range(500):
     net.hosts["6"].send_random_packet(net.hosts["7"])
 
+window_data = list()
+
+print("Testing using 3 hosts.")
+print("Sending 1500 packets over the network.")
+print("Running the simulation for 500 steps.")
+
 for i in range(515):
     net.step()
-    print(
-       net.hosts["1"].tcp.window_size,
-       net.hosts["1"].tcp.ssthresh,
-       int(net.hosts["1"].tcp.ack_recv_flag),
-       int(net.hosts["1"].tcp.ack_timeout_flag))
+    
+    window_data.append([
+        net.hosts["1"].tcp.window_size,
+        net.hosts["3"].tcp.window_size,
+        net.hosts["6"].tcp.window_size
+    ])
+
+window_data = np.array(window_data)
+
+print()
+print("Simulation completed.")
+print()
+
+print("Mean window size:")
+print(np.mean(window_data,axis=0))
+
+plt.figure(figsize=(15,5))
+plt.plot(window_data)
+plt.title("Window Size")
+plt.xlabel("tick")
+plt.ylabel("window_size")
+plt.legend(['host1','host2','host3'])
+plt.show()
